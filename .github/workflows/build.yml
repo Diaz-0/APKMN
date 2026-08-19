@@ -48,7 +48,7 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq \
-            git zip unzip openjdk-17-jdk-headless \
+            git zip unzip \
             python3 python3-pip python3-venv \
             libssl-dev libffi-dev build-essential \
             autoconf libtool pkg-config \
@@ -56,14 +56,13 @@ jobs:
             libtinfo5 cmake libltdl-dev
 
       # ---------------------------------------------------------
-      # 4. Configurar Java 17
+      # 4. Configurar Java 17 (buildozer usa Java del sistema, pero esto asegura versión)
       # ---------------------------------------------------------
       - name: Set up JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
           java-version: '17'
-          cache: 'gradle'
 
       # ---------------------------------------------------------
       # 5. Instalar buildozer
