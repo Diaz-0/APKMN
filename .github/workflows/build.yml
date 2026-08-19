@@ -1,0 +1,108 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build APK
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+
+    steps:
+      # ---------------------------------------------------------
+      # 1. Liberar espacio en disco y RAM (evita OOM / timeout)
+      # ---------------------------------------------------------
+      - name: Free disk space & RAM
+        run: |
+          echo "=== Espacio antes ==="
+          df -h /
+          echo "=== Memoria antes ==="
+          free -h
+
+          # Borrar paquetes pesados preinstalados en GitHub runners
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/hostedtoolcache/CodeQL
+          sudo rm -rf /usr/local/lib/android/sdk/ndk-bundle 2>/dev/null || true
+          sudo rm -rf /usr/local/lib/android/sdk/ndk/* 2>/dev/null || true
+          sudo apt-get clean
+          sudo rm -rf /var/lib/apt/lists/*
+
+          echo "=== Espacio después ==="
+          df -h /
+          echo "=== Memoria después ==="
+          free -h
+
+      # ---------------------------------------------------------
+      # 2. Checkout del repositorio
+      # ---------------------------------------------------------
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ---------------------------------------------------------
+      # 3. Instalar dependencias del sistema (mínimas)
+      # ---------------------------------------------------------
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq \
+            git zip unzip openjdk-17-jdk-headless \
+            python3 python3-pip python3-venv \
+            libssl-dev libffi-dev build-essential \
+            autoconf libtool pkg-config \
+            zlib1g-dev libncurses5-dev libncursesw5-dev \
+            libtinfo5 cmake libltdl-dev
+
+      # ---------------------------------------------------------
+      # 4. Configurar Java 17
+      # ---------------------------------------------------------
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+
+      # ---------------------------------------------------------
+      # 5. Instalar buildozer
+      # ---------------------------------------------------------
+      - name: Install buildozer
+        run: |
+          python3 -m pip install --upgrade pip setuptools wheel
+          python3 -m pip install --no-cache-dir buildozer
+
+      # ---------------------------------------------------------
+      # 6. Build APK con buildozer
+      # ---------------------------------------------------------
+      - name: Build APK
+        run: |
+          # Asegurar que buildozer acepte la licencia del SDK
+          export ANDROID_SDK_ROOT=$HOME/.buildozer/android/platform/android-sdk
+          export ANDROID_NDK_ROOT=$HOME/.buildozer/android/platform/android-ndk-r27c
+          export PATH=$ANDROID_SDK_ROOT/platform-tools:$ANDROID_SDK_ROOT/tools:$ANDROID_SDK_ROOT/tools/bin:$PATH
+
+          # Ejecutar buildozer (release = APK firmado listo para Play Store)
+          buildozer -v android release
+
+      # ---------------------------------------------------------
+      # 7. Subir artefacto (APK / AAB)
+      # ---------------------------------------------------------
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: monitor-red-apk
+          path: bin/*.apk
+          retention-days: 30
+
+      # ---------------------------------------------------------
+      # 8. (Opcional) Subir AAB si se genera
+      # ---------------------------------------------------------
+      - name: Upload AAB artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: monitor-red-aab
+          path: bin/*.aab
+          retention-days: 30
