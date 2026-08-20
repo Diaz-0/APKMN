@@ -90,12 +90,12 @@ jobs:
           java-version: '17'
 
       # ---------------------------------------------------------
-      # 6. Instalar buildozer
+      # 6. Instalar buildozer con pip compatible
       # ---------------------------------------------------------
       - name: Install buildozer
         run: |
-          # Usar pip 24.0 (compatible con python-for-android)
-          python3 -m pip install --upgrade "pip<25" setuptools wheel
+          # Usar pip 23.3.2 (compatible con python-for-android, evita BuildDependencyInstallError)
+          python3 -m pip install --upgrade "pip==23.3.2" "setuptools==65.5.0" wheel
           python3 -m pip install --no-cache-dir buildozer
 
       # ---------------------------------------------------------
@@ -150,7 +150,20 @@ jobs:
           fi
 
       # ---------------------------------------------------------
-      # 10. Build APK con buildozer (con reintentos para descargas)
+      # 10b. Forzar pip compatible en entorno buildozer
+      # ---------------------------------------------------------
+      - name: Force compatible pip in buildozer env
+        run: |
+          # buildozer crea su propio venv, forzar pip 23.3.2 allí también
+          if [ -d "$HOME/.buildozer/android/platform/build-arm64-v8a_armeabi-v7a/build/other_builds/hostpython3/desktop/hostpython3/native-build" ]; then
+            echo "Buildozer env found, will use pip from there"
+          fi
+          # Exportar variables para que buildozer use pip correcto
+          export PIP_VERSION=23.3.2
+          export SETUPTOOLS_VERSION=65.5.0
+
+      # ---------------------------------------------------------
+      # 11. Build APK con buildozer (con reintentos para descargas)
       # ---------------------------------------------------------
       - name: Build APK
         run: |
