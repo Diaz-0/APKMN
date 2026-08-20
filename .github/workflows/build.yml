@@ -52,7 +52,7 @@ jobs:
           python-version: '3.11'
 
       # ---------------------------------------------------------
-      # 4. Cache de buildozer (SDK, NDK, python-for-android) - CLAVE v3 (evita cache 3.14)
+      # 4. Cache de buildozer (SDK, NDK, python-for-android) - CLAVE v4 (evita cache 3.14)
       # ---------------------------------------------------------
       - name: Cache buildozer directory
         uses: actions/cache@v4
@@ -60,9 +60,9 @@ jobs:
           path: |
             ~/.buildozer
             ${{ github.workspace }}/.buildozer
-          key: buildozer-${{ runner.os }}-python311-v3-${{ hashFiles('buildozer.spec') }}-${{ hashFiles('main.py') }}
+          key: buildozer-${{ runner.os }}-python311-v4-${{ hashFiles('buildozer.spec') }}-${{ hashFiles('main.py') }}
           restore-keys: |
-            buildozer-${{ runner.os }}-python311-v3-
+            buildozer-${{ runner.os }}-python311-v4-
 
       # ---------------------------------------------------------
       # 5. Instalar dependencias del sistema (mínimas, SIN python3 - ya viene de setup-python)
