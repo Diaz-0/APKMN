@@ -44,7 +44,15 @@ jobs:
         uses: actions/checkout@v4
 
       # ---------------------------------------------------------
-      # 3. Limpiar cache de buildozer ANTES de restaurar (evita Python 3.14 cacheado)
+      # 3. Configurar Python 3.11 EXPLÍCITAMENTE (evita Python 3.14 del runner)
+      # ---------------------------------------------------------
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      # ---------------------------------------------------------
+      # 4. Limpiar cache de buildozer ANTES de restaurar (evita Python 3.14 cacheado)
       # ---------------------------------------------------------
       - name: Clean buildozer cache
         run: |
@@ -53,7 +61,7 @@ jobs:
           echo "Cache limpiado"
 
       # ---------------------------------------------------------
-      # 4. Cache de buildozer (SDK, NDK, python-for-android) - CLAVE NUEVA FORZADA
+      # 5. Cache de buildozer (SDK, NDK, python-for-android) - CLAVE NUEVA FORZADA
       # ---------------------------------------------------------
       - name: Cache buildozer directory
         uses: actions/cache@v4
@@ -66,14 +74,13 @@ jobs:
             buildozer-${{ runner.os }}-python311-v2-
 
       # ---------------------------------------------------------
-      # 4. Instalar dependencias del sistema (mínimas)
+      # 6. Instalar dependencias del sistema (mínimas, SIN python3 - ya viene de setup-python)
       # ---------------------------------------------------------
       - name: Install system dependencies
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq \
             git zip unzip \
-            python3 python3-pip python3-venv \
             libssl-dev libffi-dev build-essential \
             autoconf libtool pkg-config \
             zlib1g-dev libncurses5-dev libncursesw5-dev \
@@ -96,17 +103,6 @@ jobs:
           # Usar pip 23.3.2 (compatible con python-for-android, evita BuildDependencyInstallError)
           python3 -m pip install --upgrade "pip==23.3.2" "setuptools==65.5.0" wheel
           python3 -m pip install --no-cache-dir buildozer
-
-      # ---------------------------------------------------------
-      # 6b. Verificar versión de Python y configurar p4a
-      # ---------------------------------------------------------
-      - name: Verify Python version and configure p4a
-        run: |
-          echo "Python version: $(python3 --version)"
-          echo "Pip version: $(pip --version)"
-          # Forzar p4a a usar Python 3.11
-          export P4A_PYTHON_VERSION=3.11
-          echo "P4A_PYTHON_VERSION=$P4A_PYTHON_VERSION"
 
       # ---------------------------------------------------------
       # 7. Instalar Android SDK Command-line Tools (necesario para sdkmanager moderno)
