@@ -89,12 +89,31 @@ jobs:
           python3 -m pip install --no-cache-dir buildozer
 
       # ---------------------------------------------------------
-      # 7. Pre-aceptar licencias del SDK de Android (evita prompt interactivo)
+      # 7. Instalar Android SDK Command-line Tools (necesario para sdkmanager moderno)
+      # ---------------------------------------------------------
+      - name: Install Android SDK cmdline-tools
+        run: |
+          export ANDROID_SDK_ROOT=$HOME/.buildozer/android/platform/android-sdk
+          mkdir -p "$ANDROID_SDK_ROOT/cmdline-tools"
+          cd "$ANDROID_SDK_ROOT/cmdline-tools"
+          # Descargar command-line tools si no existe
+          if [ ! -d "latest" ]; then
+            wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdline-tools.zip
+            unzip -q cmdline-tools.zip
+            mv cmdline-tools latest
+            rm cmdline-tools.zip
+          fi
+          export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH
+          # Instalar platform-tools y platforms necesarios
+          yes | sdkmanager --sdk_root="$ANDROID_SDK_ROOT" "platform-tools" "platforms;android-34" "build-tools;34.0.0" > /dev/null
+
+      # ---------------------------------------------------------
+      # 8. Pre-aceptar licencias del SDK de Android (evita prompt interactivo)
       # ---------------------------------------------------------
       - name: Accept Android SDK licenses
         run: |
           export ANDROID_SDK_ROOT=$HOME/.buildozer/android/platform/android-sdk
-          export PATH=$ANDROID_SDK_ROOT/tools/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH
+          export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH
           # Crear directorio de licencias y aceptar todas
           mkdir -p "$ANDROID_SDK_ROOT/licenses"
           echo "24333f8a63b6825ea9c5514f83c2829b004d1fee" > "$ANDROID_SDK_ROOT/licenses/android-sdk-license"
@@ -108,13 +127,13 @@ jobs:
           fi
 
       # ---------------------------------------------------------
-      # 8. Build APK con buildozer (con reintentos para descargas)
+      # 9. Build APK con buildozer (con reintentos para descargas)
       # ---------------------------------------------------------
       - name: Build APK
         run: |
           export ANDROID_SDK_ROOT=$HOME/.buildozer/android/platform/android-sdk
           export ANDROID_NDK_ROOT=$HOME/.buildozer/android/platform/android-ndk-r28c
-          export PATH=$ANDROID_SDK_ROOT/platform-tools:$ANDROID_SDK_ROOT/tools:$ANDROID_SDK_ROOT/tools/bin:$PATH
+          export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$ANDROID_SDK_ROOT/tools:$PATH
 
           # Función de reintento para descargas inestables
           retry() {
