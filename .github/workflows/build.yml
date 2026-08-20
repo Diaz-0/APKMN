@@ -108,6 +108,19 @@ jobs:
           yes | sdkmanager --sdk_root="$ANDROID_SDK_ROOT" "platform-tools" "platforms;android-34" "build-tools;34.0.0" > /dev/null
 
       # ---------------------------------------------------------
+      # 7b. Crear symlink para compatibilidad con python-for-android
+      # p4a busca sdkmanager en tools/bin/sdkmanager (ruta antigua)
+      # ---------------------------------------------------------
+      - name: Create sdkmanager symlink for p4a compatibility
+        run: |
+          export ANDROID_SDK_ROOT=$HOME/.buildozer/android/platform/android-sdk
+          mkdir -p "$ANDROID_SDK_ROOT/tools/bin"
+          ln -sf "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" "$ANDROID_SDK_ROOT/tools/bin/sdkmanager"
+          ln -sf "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/avdmanager" "$ANDROID_SDK_ROOT/tools/bin/avdmanager" 2>/dev/null || true
+          echo "Symlink created: $ANDROID_SDK_ROOT/tools/bin/sdkmanager -> $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
+          ls -la "$ANDROID_SDK_ROOT/tools/bin/"
+
+      # ---------------------------------------------------------
       # 8. Pre-aceptar licencias del SDK de Android (evita prompt interactivo)
       # ---------------------------------------------------------
       - name: Accept Android SDK licenses
