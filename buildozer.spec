@@ -37,8 +37,8 @@ version = 1.0.0
 
 # (list) Application requirements
 # comma separated e.g. requirements = sqlite3,kivy
-# Usar python3.11 (estable) en lugar de python3 (que usa 3.14 con wheels no soportados)
-requirements = python3.11,kivy==2.3.0
+# Usar python3.11 (estable) + kivy 2.2.1 (compatible con Python 3.11, evita errores Cython 3.14)
+requirements = python3.11,kivy==2.2.1
 
 # (str) Custom source folders for requirements
 # Sets custom source for any requirements with recipes
@@ -67,7 +67,7 @@ orientation = portrait
 osx.python_version = 3
 
 # Kivy version to use
-osx.kivy_version = 2.3.0
+osx.kivy_version = 2.2.1
 
 #
 # Android specific
