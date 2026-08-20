@@ -85,7 +85,8 @@ jobs:
       # ---------------------------------------------------------
       - name: Install buildozer
         run: |
-          python3 -m pip install --upgrade pip setuptools wheel
+          # Usar pip 24.0 (compatible con python-for-android)
+          python3 -m pip install --upgrade "pip<25" setuptools wheel
           python3 -m pip install --no-cache-dir buildozer
 
       # ---------------------------------------------------------
@@ -140,7 +141,16 @@ jobs:
           fi
 
       # ---------------------------------------------------------
-      # 9. Build APK con buildozer (con reintentos para descargas)
+      # 9. Limpiar cache de buildozer (evita problemas con Python 3.14 cacheado)
+      # ---------------------------------------------------------
+      - name: Clean buildozer cache
+        run: |
+          rm -rf .buildozer
+          rm -rf ~/.buildozer
+          echo "Cache limpiado"
+
+      # ---------------------------------------------------------
+      # 10. Build APK con buildozer (con reintentos para descargas)
       # ---------------------------------------------------------
       - name: Build APK
         run: |
