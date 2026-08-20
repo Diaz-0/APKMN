@@ -37,8 +37,11 @@ version = 1.0.0
 
 # (list) Application requirements
 # comma separated e.g. requirements = sqlite3,kivy
-# Usar python3.11 (estable) + kivy SIN versión fija (p4a usa su receta interna para Android)
-requirements = python3.11,kivy
+# Python version se especifica en android.python_version, NO en requirements
+requirements = kivy
+
+# (str) Python version for Android (p4a usa esta para seleccionar la receta correcta)
+android.python_version = 3.11
 
 # (str) Custom source folders for requirements
 # Sets custom source for any requirements with recipes
