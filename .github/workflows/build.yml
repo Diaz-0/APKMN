@@ -9,8 +9,10 @@ jobs:
   build:
     name: Build APK
     runs-on: ubuntu-22.04
-    timeout-minutes: 60
+    timeout-minutes: 90
 
+    # Cache del directorio .buildozer (SDK + NDK + python-for-android)
+    # Esto evita re-descargar ~2GB en cada run
     steps:
       # ---------------------------------------------------------
       # 1. Liberar espacio en disco y RAM (evita OOM / timeout)
@@ -42,7 +44,21 @@ jobs:
         uses: actions/checkout@v4
 
       # ---------------------------------------------------------
-      # 3. Instalar dependencias del sistema (mínimas)
+      # 3. Cache de buildozer (SDK, NDK, python-for-android)
+      # ---------------------------------------------------------
+      - name: Cache buildozer directory
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.buildozer
+            ${{ github.workspace }}/.buildozer
+          key: buildozer-${{ runner.os }}-${{ hashFiles('buildozer.spec') }}-${{ hashFiles('main.py') }}
+          restore-keys: |
+            buildozer-${{ runner.os }}-${{ hashFiles('buildozer.spec') }}-
+            buildozer-${{ runner.os }}-
+
+      # ---------------------------------------------------------
+      # 4. Instalar dependencias del sistema (mínimas)
       # ---------------------------------------------------------
       - name: Install system dependencies
         run: |
@@ -56,7 +72,7 @@ jobs:
             libtinfo5 cmake libltdl-dev
 
       # ---------------------------------------------------------
-      # 4. Configurar Java 17 (buildozer usa Java del sistema, pero esto asegura versión)
+      # 5. Configurar Java 17
       # ---------------------------------------------------------
       - name: Set up JDK 17
         uses: actions/setup-java@v5
@@ -65,7 +81,7 @@ jobs:
           java-version: '17'
 
       # ---------------------------------------------------------
-      # 5. Instalar buildozer
+      # 6. Instalar buildozer
       # ---------------------------------------------------------
       - name: Install buildozer
         run: |
@@ -73,7 +89,7 @@ jobs:
           python3 -m pip install --no-cache-dir buildozer
 
       # ---------------------------------------------------------
-      # 6. Pre-aceptar licencias del SDK de Android (evita prompt interactivo)
+      # 7. Pre-aceptar licencias del SDK de Android (evita prompt interactivo)
       # ---------------------------------------------------------
       - name: Accept Android SDK licenses
         run: |
@@ -87,24 +103,43 @@ jobs:
           echo "84831b9409646a918e30573bab4c9c91346d8abd" >> "$ANDROID_SDK_ROOT/licenses/android-sdk-license"
           # También para NDK si existe
           if [ -d "$HOME/.buildozer/android/platform/android-ndk-r28c" ]; then
+            mkdir -p "$HOME/.buildozer/android/platform/android-ndk-r28c/licenses"
             echo "24333f8a63b6825ea9c5514f83c2829b004d1fee" > "$HOME/.buildozer/android/platform/android-ndk-r28c/licenses/android-sdk-license" 2>/dev/null || true
           fi
 
       # ---------------------------------------------------------
-      # 7. Build APK con buildozer
+      # 8. Build APK con buildozer (con reintentos para descargas)
       # ---------------------------------------------------------
       - name: Build APK
         run: |
-          # Asegurar que buildozer acepte la licencia del SDK
           export ANDROID_SDK_ROOT=$HOME/.buildozer/android/platform/android-sdk
           export ANDROID_NDK_ROOT=$HOME/.buildozer/android/platform/android-ndk-r28c
           export PATH=$ANDROID_SDK_ROOT/platform-tools:$ANDROID_SDK_ROOT/tools:$ANDROID_SDK_ROOT/tools/bin:$PATH
 
-          # Ejecutar buildozer (release = APK firmado listo para Play Store)
-          buildozer -v android release
+          # Función de reintento para descargas inestables
+          retry() {
+            local n=1
+            local max=3
+            local delay=15
+            while true; do
+              "$@" && break || {
+                if [[ $n -lt $max ]]; then
+                  ((n++))
+                  echo "Command failed. Attempt $n/$max. Retrying in $delay seconds..."
+                  sleep $delay
+                else
+                  echo "Command failed after $max attempts."
+                  return 1
+                fi
+              }
+            done
+          }
+
+          # Ejecutar buildozer con reintentos
+          retry buildozer -v android release
 
       # ---------------------------------------------------------
-      # 8. Subir artefacto (APK)
+      # 9. Subir artefacto (APK)
       # ---------------------------------------------------------
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
@@ -114,7 +149,7 @@ jobs:
           retention-days: 30
 
       # ---------------------------------------------------------
-      # 9. Subir AAB si se genera
+      # 10. Subir AAB si se genera
       # ---------------------------------------------------------
       - name: Upload AAB artifact
         if: always()
