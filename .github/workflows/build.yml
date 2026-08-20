@@ -53,7 +53,7 @@ jobs:
           echo "Cache limpiado"
 
       # ---------------------------------------------------------
-      # 4. Cache de buildozer (SDK, NDK, python-for-android)
+      # 4. Cache de buildozer (SDK, NDK, python-for-android) - CLAVE NUEVA FORZADA
       # ---------------------------------------------------------
       - name: Cache buildozer directory
         uses: actions/cache@v4
@@ -61,10 +61,9 @@ jobs:
           path: |
             ~/.buildozer
             ${{ github.workspace }}/.buildozer
-          key: buildozer-${{ runner.os }}-python311-${{ hashFiles('buildozer.spec') }}-${{ hashFiles('main.py') }}
+          key: buildozer-${{ runner.os }}-python311-v2-${{ hashFiles('buildozer.spec') }}-${{ hashFiles('main.py') }}
           restore-keys: |
-            buildozer-${{ runner.os }}-python311-${{ hashFiles('buildozer.spec') }}-
-            buildozer-${{ runner.os }}-python311-
+            buildozer-${{ runner.os }}-python311-v2-
 
       # ---------------------------------------------------------
       # 4. Instalar dependencias del sistema (mínimas)
@@ -97,6 +96,17 @@ jobs:
           # Usar pip 23.3.2 (compatible con python-for-android, evita BuildDependencyInstallError)
           python3 -m pip install --upgrade "pip==23.3.2" "setuptools==65.5.0" wheel
           python3 -m pip install --no-cache-dir buildozer
+
+      # ---------------------------------------------------------
+      # 6b. Verificar versión de Python y configurar p4a
+      # ---------------------------------------------------------
+      - name: Verify Python version and configure p4a
+        run: |
+          echo "Python version: $(python3 --version)"
+          echo "Pip version: $(pip --version)"
+          # Forzar p4a a usar Python 3.11
+          export P4A_PYTHON_VERSION=3.11
+          echo "P4A_PYTHON_VERSION=$P4A_PYTHON_VERSION"
 
       # ---------------------------------------------------------
       # 7. Instalar Android SDK Command-line Tools (necesario para sdkmanager moderno)
