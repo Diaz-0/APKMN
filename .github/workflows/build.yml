@@ -52,16 +52,7 @@ jobs:
           python-version: '3.11'
 
       # ---------------------------------------------------------
-      # 4. Limpiar cache de buildozer ANTES de restaurar (evita Python 3.14 cacheado)
-      # ---------------------------------------------------------
-      - name: Clean buildozer cache
-        run: |
-          rm -rf .buildozer
-          rm -rf ~/.buildozer
-          echo "Cache limpiado"
-
-      # ---------------------------------------------------------
-      # 5. Cache de buildozer (SDK, NDK, python-for-android) - CLAVE NUEVA FORZADA
+      # 4. Cache de buildozer (SDK, NDK, python-for-android) - CLAVE v3 (evita cache 3.14)
       # ---------------------------------------------------------
       - name: Cache buildozer directory
         uses: actions/cache@v4
@@ -69,12 +60,12 @@ jobs:
           path: |
             ~/.buildozer
             ${{ github.workspace }}/.buildozer
-          key: buildozer-${{ runner.os }}-python311-v2-${{ hashFiles('buildozer.spec') }}-${{ hashFiles('main.py') }}
+          key: buildozer-${{ runner.os }}-python311-v3-${{ hashFiles('buildozer.spec') }}-${{ hashFiles('main.py') }}
           restore-keys: |
-            buildozer-${{ runner.os }}-python311-v2-
+            buildozer-${{ runner.os }}-python311-v3-
 
       # ---------------------------------------------------------
-      # 6. Instalar dependencias del sistema (mínimas, SIN python3 - ya viene de setup-python)
+      # 5. Instalar dependencias del sistema (mínimas, SIN python3 - ya viene de setup-python)
       # ---------------------------------------------------------
       - name: Install system dependencies
         run: |
