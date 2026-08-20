@@ -44,7 +44,16 @@ jobs:
         uses: actions/checkout@v4
 
       # ---------------------------------------------------------
-      # 3. Cache de buildozer (SDK, NDK, python-for-android)
+      # 3. Limpiar cache de buildozer ANTES de restaurar (evita Python 3.14 cacheado)
+      # ---------------------------------------------------------
+      - name: Clean buildozer cache
+        run: |
+          rm -rf .buildozer
+          rm -rf ~/.buildozer
+          echo "Cache limpiado"
+
+      # ---------------------------------------------------------
+      # 4. Cache de buildozer (SDK, NDK, python-for-android)
       # ---------------------------------------------------------
       - name: Cache buildozer directory
         uses: actions/cache@v4
@@ -52,10 +61,10 @@ jobs:
           path: |
             ~/.buildozer
             ${{ github.workspace }}/.buildozer
-          key: buildozer-${{ runner.os }}-${{ hashFiles('buildozer.spec') }}-${{ hashFiles('main.py') }}
+          key: buildozer-${{ runner.os }}-python311-${{ hashFiles('buildozer.spec') }}-${{ hashFiles('main.py') }}
           restore-keys: |
-            buildozer-${{ runner.os }}-${{ hashFiles('buildozer.spec') }}-
-            buildozer-${{ runner.os }}-
+            buildozer-${{ runner.os }}-python311-${{ hashFiles('buildozer.spec') }}-
+            buildozer-${{ runner.os }}-python311-
 
       # ---------------------------------------------------------
       # 4. Instalar dependencias del sistema (mínimas)
@@ -139,15 +148,6 @@ jobs:
             mkdir -p "$HOME/.buildozer/android/platform/android-ndk-r28c/licenses"
             echo "24333f8a63b6825ea9c5514f83c2829b004d1fee" > "$HOME/.buildozer/android/platform/android-ndk-r28c/licenses/android-sdk-license" 2>/dev/null || true
           fi
-
-      # ---------------------------------------------------------
-      # 9. Limpiar cache de buildozer (evita problemas con Python 3.14 cacheado)
-      # ---------------------------------------------------------
-      - name: Clean buildozer cache
-        run: |
-          rm -rf .buildozer
-          rm -rf ~/.buildozer
-          echo "Cache limpiado"
 
       # ---------------------------------------------------------
       # 10. Build APK con buildozer (con reintentos para descargas)
